@@ -255,7 +255,7 @@ namespace Microsoft.Azure.Cosmos
             using (ITrace trace = disableDiagnostics ? NoOpTrace.Singleton : (ITrace)Tracing.Trace.GetRootTrace(operationName, traceComponent, traceLevel))
             {
                 trace.AddDatum("Client Configuration", this.client.ClientConfigurationTraceDatum);
-
+                Console.WriteLine(operationName);
                 return await this.RunWithDiagnosticsHelperAsync(
                     trace,
                     task);
@@ -280,7 +280,7 @@ namespace Microsoft.Azure.Cosmos
                 using (ITrace trace = disableDiagnostics ? NoOpTrace.Singleton : (ITrace)Tracing.Trace.GetRootTrace(operationName, traceComponent, traceLevel))
                 {
                     trace.AddDatum("Synchronization Context", syncContextVirtualAddress);
-
+                    Console.WriteLine(operationName);
                     return await this.RunWithDiagnosticsHelperAsync(
                         trace,
                         task);
@@ -463,7 +463,7 @@ namespace Microsoft.Azure.Cosmos
             {
                 using (trace.CosmosInstrumentation)
                 {
-                    trace.CosmosInstrumentation.Attributes.AccountName = this.client.Endpoint;
+                    trace.CosmosInstrumentation.Attributes.AccountName = this.Client?.Endpoint;
                     trace.CosmosInstrumentation.Attributes.UserAgent = this.UserAgent;
 
                     try
