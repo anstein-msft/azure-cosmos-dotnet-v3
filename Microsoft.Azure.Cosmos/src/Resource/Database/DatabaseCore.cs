@@ -345,6 +345,10 @@ namespace Microsoft.Azure.Cosmos
 
             this.ValidateContainerProperties(containerProperties);
 
+            trace.CosmosInstrumentation.Record(
+                containerId: containerProperties.Id, 
+                databaseId: this.Id);
+
             ResponseMessage response = await this.ProcessCollectionCreateAsync(
                 streamPayload: this.ClientContext.SerializerCore.ToStream(containerProperties),
                 throughput: throughput,
@@ -893,6 +897,8 @@ namespace Microsoft.Azure.Cosmos
            ITrace trace,
            CancellationToken cancellationToken)
         {
+            trace.CosmosInstrumentation.Record(databaseId: this.Id);
+
             return this.ClientContext.ProcessResourceOperationStreamAsync(
               resourceUri: linkUri,
               resourceType: resourceType,

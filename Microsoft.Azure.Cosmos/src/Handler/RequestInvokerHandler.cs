@@ -76,6 +76,7 @@ namespace Microsoft.Azure.Cosmos.Handlers
             return await base.SendAsync(request, cancellationToken);
         }
 
+        // from client context core
         public virtual async Task<T> SendAsync<T>(
             string resourceUri,
             ResourceType resourceType,
@@ -108,7 +109,8 @@ namespace Microsoft.Azure.Cosmos.Handlers
 
             return responseCreator(responseMessage);
         }
-
+        
+        //client context core/excutils/above requestinvoke handler
         public virtual async Task<ResponseMessage> SendAsync(
             string resourceUriString,
             ResourceType resourceType,
@@ -121,6 +123,7 @@ namespace Microsoft.Azure.Cosmos.Handlers
             ITrace trace,
             CancellationToken cancellationToken)
         {
+            ResponseMessage response = null;
             if (resourceUriString == null)
             {
                 throw new ArgumentNullException(nameof(resourceUriString));
@@ -174,11 +177,29 @@ namespace Microsoft.Azure.Cosmos.Handlers
                                 }
                                 catch (DocumentClientException dce)
                                 {
-                                    return dce.ToCosmosResponseMessage(request);
+                                    response = dce.ToCosmosResponseMessage(request);
+
+                                    trace.CosmosInstrumentation.RecordWithException(requestCharge: response?.Headers?.RequestCharge,
+                                                                       operationType: operationType.ToOperationTypeString(),
+                                                                       statusCode: response.StatusCode,
+                                                                       containerId: cosmosContainerCore?.Id,
+                                                                       databaseId: cosmosContainerCore?.Database?.Id,
+                                                                       exception: dce);
+
+                                    return response;
                                 }
                                 catch (CosmosException ce)
                                 {
-                                    return ce.ToCosmosResponseMessage(request);
+                                    response = ce.ToCosmosResponseMessage(request);
+
+                                    trace.CosmosInstrumentation.RecordWithException(requestCharge: response?.Headers?.RequestCharge,
+                                                                       operationType: operationType.ToOperationTypeString(),
+                                                                       statusCode: response.StatusCode,
+                                                                       containerId: cosmosContainerCore?.Id,
+                                                                       databaseId: cosmosContainerCore?.Database?.Id,
+                                                                       exception: ce);
+
+                                    return response;
                                 }
                             }
                             else
@@ -203,7 +224,16 @@ namespace Microsoft.Azure.Cosmos.Handlers
                             }
                             catch (CosmosException ex)
                             {
-                                return ex.ToCosmosResponseMessage(request);
+                                response = ex.ToCosmosResponseMessage(request);
+
+                                trace.CosmosInstrumentation.RecordWithException(requestCharge: response?.Headers?.RequestCharge,
+                                                                   operationType: operationType.ToOperationTypeString(),
+                                                                   statusCode: response.StatusCode,
+                                                                   containerId: cosmosContainerCore?.Id,
+                                                                   databaseId: cosmosContainerCore?.Database?.Id,
+                                                                   exception: ex);
+
+                                return response;
                             }
 
                             PartitionKeyRangeCache routingMapProvider = await this.client.DocumentClient.GetPartitionKeyRangeCacheAsync(childTrace);
@@ -220,7 +250,16 @@ namespace Microsoft.Azure.Cosmos.Handlers
                                     subStatusCode: default,
                                     activityId: Guid.Empty.ToString(),
                                     requestCharge: default);
-                                return notFound.ToCosmosResponseMessage(request);
+                                response = notFound.ToCosmosResponseMessage(request);
+
+                                trace.CosmosInstrumentation.RecordWithException(requestCharge: response?.Headers?.RequestCharge,
+                                                                   operationType: operationType.ToOperationTypeString(),
+                                                                   statusCode: response.StatusCode,
+                                                                   containerId: cosmosContainerCore?.Id,
+                                                                   databaseId: cosmosContainerCore?.Database?.Id,
+                                                                   exception: notFound);
+
+                                return response;
                             }
 
                             // For epk range filtering we can end up in one of 3 cases:
@@ -236,7 +275,16 @@ namespace Microsoft.Azure.Cosmos.Handlers
                                     activityId: Guid.NewGuid().ToString(),
                                     requestCharge: default);
 
-                                return goneException.ToCosmosResponseMessage(request);
+                                response = goneException.ToCosmosResponseMessage(request);
+
+                                trace.CosmosInstrumentation.RecordWithException(requestCharge: response?.Headers?.RequestCharge,
+                                                                   operationType: operationType.ToOperationTypeString(),
+                                                                   statusCode: response.StatusCode,
+                                                                   containerId: cosmosContainerCore?.Id,
+                                                                   databaseId: cosmosContainerCore?.Database?.Id,
+                                                                   exception: goneException);
+
+                                return response;
                             }
                             // overlappingRanges.Count == 1
                             else
@@ -284,7 +332,16 @@ namespace Microsoft.Azure.Cosmos.Handlers
                     }
                     requestEnricher?.Invoke(request);
 
-                    return await this.SendAsync(request, cancellationToken);
+                    response = await this.SendAsync(request, cancellationToken);
+
+                    trace.CosmosInstrumentation.Record(requestCharge: response?.Headers?.RequestCharge,
+                                                       operationType: operationType.ToOperationTypeString(),
+                                                       statusCode: response.StatusCode,
+                                                       containerId: cosmosContainerCore?.Id,
+                                                       databaseId: cosmosContainerCore?.Database?.Id);
+
+                    return response;
+
                 }
                 finally
                 {
