@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Cosmos
     using System.Net;
     using System.Net.Http;
     using System.Net.Http.Headers;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos.Resource.CosmosExceptions;
@@ -148,7 +149,28 @@ namespace Microsoft.Azure.Cosmos
                 : CosmosHttpClientCore.GatewayRequestTimeout;
             httpClient.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
 
-            httpClient.AddUserAgentHeader(userAgentContainer);
+            try
+            {
+                httpClient.AddUserAgentHeader(userAgentContainer);
+            }
+            catch (FormatException exc) 
+            {
+                // Get context information related to adding the user agent header.
+
+                string userAgentContainerProperties = string.Empty;
+
+                PropertyInfo[] properties = userAgentContainer.GetType().GetProperties();
+                string propNames = string.Join(", ", properties.Select(item => $"{item.Name}"));
+
+                FormatException fExcNew = exc;
+
+                // Add contect information to exception
+
+                fExcNew.Data.Add("CheckPossiblyIllegalHTTPHeaderValuesInProperties", propNames);
+
+                throw fExcNew;
+            }
+        
             httpClient.AddApiTypeHeader(apiType);
 
             // Set requested API version header that can be used for
