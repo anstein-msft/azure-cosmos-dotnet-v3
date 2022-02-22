@@ -159,14 +159,14 @@ namespace Microsoft.Azure.Cosmos
                 // character in the ApplicationName property provided in the CosmosClientOptions specified
                 // at CosmosClient construction.
 
-                // Rethrow the exception with more information so that it is easier for developers to 
-                // diagnose and resolve the exception.
+                // Rethrow the exception to preserve stack trace, but add more information so that it is easier 
+                // for developers to diagnose and resolve the exception.
 
                 if (userAgentContainer.Suffix != String.Empty)
                 {
                     FormatException fExcNew = exc;
 
-                    fExcNew.Data.Add("PossiblyIllegalValueInApplicationName", "Check Client Options Property 'ApplicationName'");
+                    fExcNew.Data.Add("PossiblyIllegalCharacterInCLientOptionsProperty", "Possibly illegal character(s) in 'ApplicationName' property of Client Options Property 'ApplicationName'.");
 
                     throw fExcNew;
                 }
