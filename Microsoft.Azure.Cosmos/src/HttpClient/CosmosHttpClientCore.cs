@@ -166,7 +166,7 @@ namespace Microsoft.Azure.Cosmos
                 {
                     FormatException fExcNew = exc;
 
-                    fExcNew.Data.Add("PossiblyIllegalCharacterInClientOptionsProperty", "Possibly illegal character(s) in 'ApplicationName' property of Client Options Property 'ApplicationName'.");
+                    fExcNew.Data.Add("PossiblyIllegalCharacterInCosmosClientClientOptionsProperty", "Possibly illegal character(s) in CosmosClient Client Options Property 'ApplicationName'");
 
                     throw fExcNew;
                 }
