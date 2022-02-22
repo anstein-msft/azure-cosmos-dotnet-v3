@@ -155,20 +155,21 @@ namespace Microsoft.Azure.Cosmos
             }
             catch (FormatException exc) 
             {
-                // Get context information related to adding the user agent header.
+                // If we get this exception and the suffix is not empty, the issue is likely an illegal
+                // character in the ApplicationName property provided in the CosmosClientOptions specified
+                // at CosmosClient construction.
 
-                string userAgentContainerProperties = string.Empty;
+                // Rethrow the exception with more information so that it is easier for developers to 
+                // diagnose and resolve the exception.
 
-                PropertyInfo[] properties = userAgentContainer.GetType().GetProperties();
-                string propNames = string.Join(", ", properties.Select(item => $"{item.Name}"));
+                if (userAgentContainer.Suffix != String.Empty)
+                {
+                    FormatException fExcNew = exc;
 
-                FormatException fExcNew = exc;
+                    fExcNew.Data.Add("PossiblyIllegalValueInApplicationName", "Check Client Options Property 'ApplicationName'");
 
-                // Add contect information to exception
-
-                fExcNew.Data.Add("CheckPossiblyIllegalHTTPHeaderValuesInProperties", propNames);
-
-                throw fExcNew;
+                    throw fExcNew;
+                }
             }
         
             httpClient.AddApiTypeHeader(apiType);
